@@ -5,7 +5,7 @@ on:
 
 jobs:
   rotate_api_tokens:
-    if: ${{ secrets.ARCGIS_TOKEN != ""}}
+    if: ${{ secrets.ARCGIS_TOKEN != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
