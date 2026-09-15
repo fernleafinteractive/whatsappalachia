@@ -1,4 +1,4 @@
-import {readFile} from "fs/promises";
+import {readFile, writeFile} from "fs/promises";
 import {searchItems, getItem} from "@esri/arcgis-rest-portal";
 import {slotForKey, updateApiKey, invalidateApiKey, createApiKey} from "@esri/arcgis-rest-developer-credentials";
 import {ArcGISIdentityManager} from "@esri/arcgis-rest-request";
@@ -96,7 +96,16 @@ async function testFeatureServiceAccess(featureServiceIDs, token) {
     return accessibleResults;
 }
 
-let config = await loadConfig();
-const existingApp = await getOrCreateApp(config.title, config.description, config.tags, default_token);
-const newToken = await generateTokenFromApplication(existingApp.id, config.expiration_days, config.feature_services, default_token);
-const accessibleFeatureServices = await testFeatureServiceAccess(config.feature_services, newToken);
+async function main(outputFile="../token.json") {
+    let config = await loadConfig();
+    const existingApp = await getOrCreateApp(config.title, config.description, config.tags, default_token);
+    const newToken = await generateTokenFromApplication(existingApp.id, config.expiration_days, config.feature_services, default_token);
+    const accessibleFeatureServices = await testFeatureServiceAccess(config.feature_services, newToken);
+    const data = {
+        "token": newToken,
+        "accessibleFeatureServices": accessibleFeatureServices,
+    }
+    await writeFile(outputFile, JSON.stringify(data, null, 2));
+}
+
+await main();
