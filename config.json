@@ -1,5 +1,7 @@
 {
-  "token_name": "whatsappalachia_los_features",
+  "title": "whatsappalachia_los_features",
+  "description": "API key for WhatsAppalachia LOS features",
+  "tags": ["whatsappalachia", "los", "features"],
   "feature_services": [
     "98d3619bf1764161a6dbebe85b641b73"
   ]

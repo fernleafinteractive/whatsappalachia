@@ -1,6 +1,6 @@
 import {readFile} from "fs/promises";
 import {searchItems} from "@esri/arcgis-rest-portal";
-import {slotForKey, updateApiKey, invalidateApiKey} from "@esri/arcgis-rest-developer-credentials";
+import {slotForKey, updateApiKey, invalidateApiKey, createApiKey} from "@esri/arcgis-rest-developer-credentials";
 import {ArcGISIdentityManager} from "@esri/arcgis-rest-request";
 
 const default_token = process.env.ARCGIS_TOKEN
@@ -10,7 +10,7 @@ async function loadConfig(file_path = "../config.json") {
     return config;
 }
 
-async function checkForApp(appTitle, token, portalURL = "https://www.arcgis.com") {
+async function checkForApp(appTitle, token) {
     const authentication = await ArcGISIdentityManager.fromToken({token: token});
     let searchQuery = `title:"${appTitle}" AND type:"Application"`
     const response = await searchItems({q: searchQuery, authentication});
@@ -21,6 +21,23 @@ async function checkForApp(appTitle, token, portalURL = "https://www.arcgis.com"
     }
     console.log(`No application found with title: ${appTitle}`)
     return null;
+}
+
+async function getOrCreateApp(title, description, tags, token){
+    const authentication = await ArcGISIdentityManager.fromToken({token: token});
+    const existingApp = await checkForApp(title, token);
+    if (existingApp) {
+        return existingApp;
+    }
+    const createResponse = await createApiKey({
+        title: title,
+        description: description,
+        tags: tags,
+        authentication
+    });
+    const createdApp = createResponse.item;
+    console.log(`Created app with id: ${createdApp.id}, title: ${createdApp.title}`)
+    return createdApp;
 }
 
 async function updateAppFeatureServices(appItemID, featureServices, token) {
@@ -40,9 +57,5 @@ async function updateAppFeatureServices(appItemID, featureServices, token) {
 }
 
 let config = await loadConfig();
-const existingApp = await checkForApp(config.token_name, default_token);
-if (existingApp) {
-    await updateAppFeatureServices(existingApp.id, config.feature_services, default_token);
-} else {
-    console.log(`No application found with title: ${config.token_name}`)
-}
+const existingApp = await getOrCreateApp(config.title, config.description, config.tags, default_token);
+await updateAppFeatureServices(existingApp.id, config.feature_services, default_token);
