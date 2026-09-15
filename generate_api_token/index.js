@@ -41,18 +41,23 @@ async function getOrCreateApp(title, description, tags, token){
     return createdApp;
 }
 
-async function updateAppFeatureServices(appItemID, featureServiceIDs, token) {
+async function generateTokenFromApplication(appItemID, expirationDays, featureServiceIDs, token){
     const authentication = await ArcGISIdentityManager.fromToken({token: token});
-
+    const expiration = new Date();
+    expiration.setDate(expiration.getDate() + expirationDays);
+    expiration.setHours(23, 59, 59, 999);
     try {
         const updateResponse = await updateApiKey({
             itemId: appItemID,
-            privilege: featureServiceIDs.map((service) => `portal:app:access:item:${service}`),
+            generateToken1: true,
+            privileges: featureServiceIDs.map((service) => `portal:app:access:item:${service}`),
+            apiToken1ExpirationDate: expiration,
             authentication
         });
-        console.log(`Updated app with id: ${appItemID}, featureServiceIDs: ${featureServiceIDs}`)
+        console.log(`Generated token for app with id: ${appItemID}`)
+        return updateResponse.accessToken1;
     } catch (error) {
-        console.log(`Error updating app with id: ${appItemID}, featureServiceIDs: ${featureServiceIDs}`)
+        console.log(`Error generating token for app with id: ${appItemID}`)
         console.log(error)
     }
 }
@@ -93,5 +98,5 @@ async function testFeatureServiceAccess(featureServiceIDs, token) {
 
 let config = await loadConfig();
 const existingApp = await getOrCreateApp(config.title, config.description, config.tags, default_token);
-await updateAppFeatureServices(existingApp.id, config.feature_services, default_token);
-const accessibleFeatureServices = await testFeatureServiceAccess(config.feature_services, default_token);
+const newToken = await generateTokenFromApplication(existingApp.id, config.expiration_days, config.feature_services, default_token);
+const accessibleFeatureServices = await testFeatureServiceAccess(config.feature_services, newToken);
