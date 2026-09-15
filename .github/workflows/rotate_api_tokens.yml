@@ -23,7 +23,8 @@ jobs:
         working-directory: generate_api_token
 
       - name: Run generate_api_token script
-        run: node generate_api_token/index.js
+        run: node index.js
+        working-directory: generate_api_token
         env:
           ARCGIS_TOKEN: ${{ secrets.ARCGIS_TOKEN }}
 
