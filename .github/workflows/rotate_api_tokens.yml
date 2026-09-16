@@ -3,6 +3,10 @@ on:
   schedule:
     - cron: '0 0 * * 0' # Run at midnight every Sunday
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   rotate_api_tokens:
     runs-on: ubuntu-latest
@@ -28,8 +32,17 @@ jobs:
         env:
           ARCGIS_TOKEN: ${{ secrets.ARCGIS_TOKEN }}
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
       - name: Set API token in AWS
-        run: 'echo TODO: set API token from token.json/token'
+        run: |
+          aws secretsmanager put-secret-value \
+            --secret-id whatsappalachia/arcgis-api-key \
+            --secret-string "$(jq -r .token token.json)"
 
       - name: Clean up temp files
         if: always()
